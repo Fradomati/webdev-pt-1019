@@ -6,24 +6,6 @@ const { debug, err } = require("@faable/flogg");
 const passport = require("passport");
 const { isLoggedIn, isLoggedOut } = require("../lib/isLoggedMiddleware");
 
-// router.get("/register", (req, res, next) => {
-//   Promise.reject("MAL")
-//     .then(() => res.render("auth/register"))
-//     .catch(e => {
-//       next(e);
-//     });
-// });
-
-// router.get("/register", async (req, res, next) => {
-//   try {
-//     await Promise.reject("MAL");
-//     res.render("auth/register");
-//   } catch (e) {
-//     err(e);
-//     next(e);
-//   }
-// });
-
 router.get("/register", isLoggedOut(), (req, res, next) => {
   debug("Hola");
   res.render("auth/register");
@@ -38,13 +20,13 @@ router.post("/register", isLoggedOut(), async (req, res, next) => {
       password: hashPassword(password)
     });
     debug(newUser);
-    req.flash(`Created user ${username}`);
+    req.flash("error", `Created user ${username}`);
 
     return res.redirect("/");
   } else {
     debug("User already exists with this username");
     debug(existingUser);
-    req.flash("User already exists with this username");
+    req.flash("error", "User already exists with this username");
     return res.redirect("/auth/register");
   }
 });

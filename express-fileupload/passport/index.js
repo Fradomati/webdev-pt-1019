@@ -10,17 +10,9 @@ passport.serializeUser((user, cb) => {
 });
 
 passport.deserializeUser((id, cb) => {
-  console.log("deserializing user");
   User.findById(id)
     .then(user => cb(null, user))
     .catch(e => cb(err));
-
-  // User.findById(id, (err, user) => {
-  //   if (err) {
-  //     return c;
-  //   }
-  //   cb(null, user);
-  // });
 });
 
 module.exports = app => {

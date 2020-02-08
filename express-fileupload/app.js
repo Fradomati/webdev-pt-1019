@@ -12,8 +12,11 @@ const logger = require("morgan");
 const path = require("path");
 const session = require("express-session");
 const MongoStore = require("connect-mongo")(session);
-const flash = require("flash");
+const flash = require("connect-flash");
 const { setLog } = require("@faable/flogg");
+const _ = require("lodash");
+const { asyncController } = require("./lib/asyncControler");
+
 setLog("express-passport");
 
 mongoose
@@ -45,9 +48,8 @@ app.use(
     store: new MongoStore({ mongooseConnection: mongoose.connection })
   })
 );
-app.use(flash());
-
 require("./passport")(app); // This automatically requires index.js in this folder
+app.use(flash());
 
 // Express View engine setup
 
@@ -65,30 +67,55 @@ hbs.registerPartials(__dirname + "/views/partials");
 app.use(express.static(path.join(__dirname, "public")));
 app.use(favicon(path.join(__dirname, "public", "images", "favicon.ico")));
 
+// Serve profile pictures from uploads
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
 /*
   - Imprime la sesion actual por consola
   - Configura la variable del usuario para todas las vistas
   - Configura la variable de los mensajes flash para las vistas
 */
-app.use((req, res, next) => {
-  console.log(req.session);
-  res.locals.user = req.user;
-  if (req.user) {
-    // Existe el usuario
-    req.user.visitas += 1;
-    req.user.save();
-  }
-  res.locals.errors = req.session.flash.map(e => e.message);
-  next();
-});
+app.use(
+  asyncController(async (req, res, next) => {
+    //console.log(req.session);
+    res.locals.user = req.user;
+    if (req.user) {
+      // Existe el usuario
+      req.user.visitas += 1;
+
+      // CHECK THIS: This is a promise to ensure there are no race conditions when saving a user in a controller function
+      await req.user.save();
+    }
+
+    // const errors = req.flash("error");
+    // res.locals.errors = errors;
+    // const info = req.flash("info");
+    // res.locals.info = info;
+
+    // Get all messages from types
+    const messageTypes = [
+      { flashName: "error", className: "danger" },
+      { flashName: "info", className: "info" }
+    ];
+    res.locals.messages = _.flatten(
+      messageTypes.map(({ flashName, className }) =>
+        req.flash(flashName).map(message => ({ type: className, message }))
+      )
+    );
+    next();
+  })
+);
 
 // default value for title local
-app.locals.title = "Express - Generated with IronGenerator";
+app.locals.title = "Fileupload";
 
 const indexRouter = require("./routes/index.router");
 app.use("/", indexRouter);
 
 const authRouter = require("./routes/auth.router");
 app.use("/auth", authRouter);
+
+const userRouter = require("./routes/user.router");
+app.use("/user", userRouter);
 
 module.exports = app;
