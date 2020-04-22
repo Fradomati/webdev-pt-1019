@@ -1,5 +1,5 @@
-import axios from "axios";
 import React, { useContext } from "react";
+import { api } from "./api";
 
 export const UserContext = React.createContext();
 
@@ -31,11 +31,6 @@ export const useUserLogout = () => {
   };
 };
 
-const api = axios.create({
-  baseURL: "http://localhost:3000",
-  withCredentials: true
-});
-
 export const doSignup = async (username, password) => {
   // Axios post a ruta /auth/signup en servidor
   // para crear un usuario en mongodb
@@ -43,7 +38,7 @@ export const doSignup = async (username, password) => {
   console.log(username, password);
   const res = await api.post("/auth/signup", {
     username,
-    password
+    password,
   });
   console.log("Created User");
   console.log(res.data);
@@ -54,7 +49,7 @@ export const doLogin = async (username, password) => {
   console.log("Do Login");
   const res = await api.post("/auth/login", {
     username,
-    password
+    password,
   });
   console.log(res.data);
   return res.data;
